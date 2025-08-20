@@ -11,9 +11,8 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, username, email, password_hash, avatar_url, voice_url, is_admin, updated_at)
+INSERT INTO users (id, username, email, password_hash, avatar_url, voice_url, is_admin)
 VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -33,7 +32,6 @@ type CreateUserParams struct {
 	AvatarUrl    sql.NullString
 	VoiceUrl     sql.NullString
 	IsAdmin      int64
-	UpdatedAt    sql.NullTime
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -45,8 +43,28 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.AvatarUrl,
 		arg.VoiceUrl,
 		arg.IsAdmin,
-		arg.UpdatedAt,
 	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.AvatarUrl,
+		&i.VoiceUrl,
+		&i.IsAdmin,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, username, email, password_hash, avatar_url, voice_url, is_admin, created_at, updated_at FROM users WHERE  email = ?
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,

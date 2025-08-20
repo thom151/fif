@@ -8,6 +8,15 @@ import (
 	"database/sql"
 )
 
+type RefreshToken struct {
+	Token     string
+	CreatedAt string
+	UpdatedAt string
+	UserID    string
+	ExpiresAt string
+	RevokedAt sql.NullString
+}
+
 type User struct {
 	ID           string
 	Username     string

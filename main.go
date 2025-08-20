@@ -13,7 +13,8 @@ import (
 )
 
 type apiConfig struct {
-	db *database.Queries
+	db        *database.Queries
+	jwtSecret string
 }
 
 func main() {
@@ -26,11 +27,17 @@ func main() {
 		log.Fatal("DATABASE_URL must be set")
 	}
 
+	secret := os.Getenv("SECRET")
+	if secret == "" {
+		log.Fatal("SECRET must be set")
+	}
+
 	db, err := sql.Open("libsql", dbURL)
 	dbQueries := database.New(db)
 
 	apiCfg := apiConfig{
-		db: dbQueries,
+		db:        dbQueries,
+		jwtSecret: secret,
 	}
 
 	if err != nil {
@@ -41,6 +48,9 @@ func main() {
 	mux.Handle("/", http.FileServer(http.Dir(filepathRoot)))
 
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
+	mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
+	mux.HandleFunc("POST /api/refresh", apiCfg.handlerRefresh)
+	mux.HandleFunc("POST /api/revoke", apiCfg.handlerRevoke)
 
 	mux.HandleFunc("/healthz", handlerReadiness)
 	srv := &http.Server{
