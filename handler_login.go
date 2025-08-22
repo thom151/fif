@@ -76,6 +76,14 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "acc_token",
+		Value:    accessToken,
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Now().Add(24 * time.Hour),
+	})
+
 	httpapi.RespondWithJSON(w, http.StatusOK, response{
 		User: User{
 			ID:        userUUID,
@@ -86,4 +94,9 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Token:        accessToken,
 		RefreshToken: refreshToken,
 	})
+}
+
+func (cfg *apiConfig) handlerGetLoginPage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./web/login.html")
+	return
 }

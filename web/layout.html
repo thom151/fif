@@ -1,7 +1,43 @@
+{{ define "layout" }}
+<!DOCTYPE html>
 <html>
 
+<head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ block "title" . }}Leadway{{ end }}</title>
+    <link rel="stylesheet" href="/static/layout.css" />
+    {{block "stylesheet" .}}
+    {{end}}
+
+
+    {{block "script" .}}
+
+    {{end}}
+</head>
+
 <body>
-    <h1>Welcome to Chirpy</h1>
+    <div id="overlay" class="overlay"></div>
+    <div class="nav-bar-container">
+        <div class="left-container">
+            <a href="/"><img src="/static/imgs/leadway_logo.png" class="leadway-logo"></a>
+        </div>
+
+        <div class="middle-container">
+            <input type="text" placeholder="Search" name="text" class="search-input">
+        </div>
+        <div class="right-container">
+            <button class="clone-button" id="clone-button"> <a href="/api/videos">UPLOAD + </a></button>
+        </div>
+    </div>
+
+    <main class="main-container">
+        {{block "content" .}}{{ end }}
+    </main>
 </body>
 
+
+
 </html>
+{{ end }}

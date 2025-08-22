@@ -8,6 +8,16 @@ import (
 	"database/sql"
 )
 
+type Broll struct {
+	ID          string
+	Title       string
+	Description sql.NullString
+	UserID      string
+	S3Url       sql.NullString
+	CreatedAt   sql.NullTime
+	UpdatedAt   sql.NullTime
+}
+
 type RefreshToken struct {
 	Token     string
 	CreatedAt string

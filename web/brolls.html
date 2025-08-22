@@ -1,0 +1,20 @@
+{{ define "title" }} Brolls {{ end }}
+{{define "stylesheet"}}
+    <link rel="stylesheet" href="/static/brolls.css" />
+{{end}}
+
+
+{{ define "content" }}
+
+<div class="videos">
+    {{ if .Brolls}}
+    {{range .Brolls }}
+    <video class="broll-player" value="{{.ID}}" controls style="display: block;" src="{{.S3Url.String}}"></video>
+    <button value="{{.ID}}" class="select-video-button">{{ .Title}}</button>
+    {{end}}
+
+    {{end}}
+</div>
+
+
+{{ end }}
