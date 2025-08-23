@@ -97,6 +97,8 @@ func main() {
 	mux.HandleFunc("POST /api/upload_broll/{brollID}", apiCfg.handlerUploadBroll)
 	mux.HandleFunc("POST /api/delete_broll/{brollID}", apiCfg.handlerDeleteBroll)
 	mux.HandleFunc("POST /api/fif_meta", apiCfg.handlerFifMeta)
+	mux.HandleFunc("POST /api/set_user_avatar_id", apiCfg.handlerSetUserAvatarID)
+	mux.HandleFunc("POST /api/create_fif_video/{fifID}", apiCfg.handlerCreateFifVideo)
 
 	//GET API
 	mux.HandleFunc("GET /api/brolls", apiCfg.handlerGetBrolls)

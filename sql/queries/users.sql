@@ -18,3 +18,8 @@ SELECT * FROM users WHERE  email = ?;
 
 -- name: GetUserByID :one
 SELECT * FROM users WHERE id = ?;
+
+
+
+-- name: SetUserAvatarID :one
+UPDATE users SET avatar_url = ? WHERE id = ? RETURNING *;
