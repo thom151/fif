@@ -47,6 +47,30 @@ func (q *Queries) CreateBrollMeta(ctx context.Context, arg CreateBrollMetaParams
 	return i, err
 }
 
+const deleteBroll = `-- name: DeleteBroll :one
+DELETE FROM brolls WHERE id = ? AND user_id = ? RETURNING id, title, description, user_id, s3_url, created_at, updated_at
+`
+
+type DeleteBrollParams struct {
+	ID     string
+	UserID string
+}
+
+func (q *Queries) DeleteBroll(ctx context.Context, arg DeleteBrollParams) (Broll, error) {
+	row := q.db.QueryRowContext(ctx, deleteBroll, arg.ID, arg.UserID)
+	var i Broll
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Description,
+		&i.UserID,
+		&i.S3Url,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getBrollById = `-- name: GetBrollById :one
 SELECT id, title, description, user_id, s3_url, created_at, updated_at FROM brolls WHERE id = ?
 `

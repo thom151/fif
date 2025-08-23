@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -27,6 +28,15 @@ func DbBrollToSignedBroll(broll database.Broll, s3client *s3.Client) (database.B
 	}
 	broll.S3Url.String = presigned
 	return broll, nil
+}
+
+func GetKey(url string) (string, error) {
+	log.Printf("parsing url: %s \n", url)
+	parts := strings.Split(url, ",")
+	if len(parts) < 2 {
+		return "", fmt.Errorf("couldn't parse url")
+	}
+	return parts[1], nil
 }
 
 func GeneratePresignedURL(s3Client *s3.Client, bucket, key string, expireTime time.Duration) (string, error) {

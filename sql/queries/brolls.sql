@@ -22,3 +22,7 @@ WHERE id = ?;
 
 -- name: GetBrollByUser :many
 SELECT * FROM brolls WHERE user_id = ?;
+
+
+-- name: DeleteBroll :one
+DELETE FROM brolls WHERE id = ? AND user_id = ? RETURNING *;

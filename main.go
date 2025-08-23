@@ -92,9 +92,11 @@ func main() {
 	mux.HandleFunc("POST /api/refresh", apiCfg.handlerRefresh)
 	mux.HandleFunc("POST /api/revoke", apiCfg.handlerRevoke)
 
-	//UPLOADS
+	//API
 	mux.HandleFunc("POST /api/create_broll_meta", apiCfg.handlerCreateBrollMeta)
 	mux.HandleFunc("POST /api/upload_broll/{brollID}", apiCfg.handlerUploadBroll)
+	mux.HandleFunc("POST /api/delete_broll/{brollID}", apiCfg.handlerDeleteBroll)
+	mux.HandleFunc("POST /api/fif_meta", apiCfg.handlerFifMeta)
 
 	//GET API
 	mux.HandleFunc("GET /api/brolls", apiCfg.handlerGetBrolls)

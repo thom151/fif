@@ -8,10 +8,13 @@
 
 <div class="videos">
     {{ if .Brolls}}
-    {{range .Brolls }}
-    <video class="broll-player" value="{{.ID}}" controls style="display: block;" src="{{.S3Url.String}}"></video>
-    <button value="{{.ID}}" class="select-video-button">{{ .Title}}</button>
-    {{end}}
+        {{range .Brolls }}
+        <video class="broll-player" value="{{.ID}}" controls style="display: block;" src="{{.S3Url.String}}"></video>
+        <button value="{{.ID}}" class="select-video-button">{{ .Title}}</button>
+       <form action="/api/delete_broll/{{.ID}}" method="POST" style="display:inline;">
+          <button type="submit" class="delete-broll-button">Delete Broll</button>
+        </form>
+        {{end}}
 
     {{end}}
 </div>

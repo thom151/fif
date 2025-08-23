@@ -18,6 +18,28 @@ type Broll struct {
 	UpdatedAt   sql.NullTime
 }
 
+type Client struct {
+	ID        string
+	Name      string
+	Email     string
+	Phone     sql.NullString
+	Address   sql.NullString
+	AgentID   string
+	CreatedAt sql.NullTime
+	UpdatedAt sql.NullTime
+}
+
+type Fif struct {
+	ID          string
+	Title       string
+	Description sql.NullString
+	UserID      string
+	S3Url       sql.NullString
+	AudioS3     sql.NullString
+	CreatedAt   sql.NullTime
+	UpdatedAt   sql.NullTime
+}
+
 type RefreshToken struct {
 	Token     string
 	CreatedAt string
