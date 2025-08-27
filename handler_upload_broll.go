@@ -16,6 +16,7 @@ import (
 	"github.com/thom151/fif/internal/assets"
 	"github.com/thom151/fif/internal/auth"
 	"github.com/thom151/fif/internal/database"
+	"github.com/thom151/fif/internal/fifS3"
 	"github.com/thom151/fif/internal/httpapi"
 	"github.com/thom151/fif/internal/media"
 )
@@ -151,7 +152,7 @@ func (cfg *apiConfig) handlerUploadBroll(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	broll, err = httpapi.DbBrollToSignedBroll(broll, cfg.s3Client)
+	broll, err = fifS3.DbBrollToSignedBroll(broll, cfg.s3Client)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't get signed broll", err)
 		return

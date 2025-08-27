@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/thom151/fif/internal/auth"
 	"github.com/thom151/fif/internal/database"
+	"github.com/thom151/fif/internal/fifS3"
 	"github.com/thom151/fif/internal/httpapi"
 )
 
@@ -48,7 +49,7 @@ func (cfg *apiConfig) handlerDeleteBroll(w http.ResponseWriter, r *http.Request)
 	}
 
 	if broll.S3Url.String != "" {
-		key, err := httpapi.GetKey(broll.S3Url.String)
+		key, err := fifS3.GetKey(broll.S3Url.String)
 		if err != nil {
 			httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't get key", err)
 			return

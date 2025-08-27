@@ -5,6 +5,7 @@ import (
 
 	"github.com/thom151/fif/internal/auth"
 	"github.com/thom151/fif/internal/database"
+	"github.com/thom151/fif/internal/fifS3"
 	"github.com/thom151/fif/internal/httpapi"
 )
 
@@ -44,7 +45,7 @@ func (cfg *apiConfig) handlerGetBrolls(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		signedBroll, err := httpapi.DbBrollToSignedBroll(brolls[i], cfg.s3Client)
+		signedBroll, err := fifS3.DbBrollToSignedBroll(brolls[i], cfg.s3Client)
 		if err != nil {
 			httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't sign brolls", err)
 			return

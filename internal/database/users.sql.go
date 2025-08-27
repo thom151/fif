@@ -101,17 +101,24 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 	return i, err
 }
 
-const setUserAvatarID = `-- name: SetUserAvatarID :one
-UPDATE users SET avatar_url = ? WHERE id = ? RETURNING id, username, email, password_hash, avatar_url, voice_url, is_admin, created_at, updated_at
+const setUserAvatarAndVoiceID = `-- name: SetUserAvatarAndVoiceID :one
+UPDATE users SET avatar_url = ?, voice_url = ?, updated_at = ? WHERE id = ? RETURNING id, username, email, password_hash, avatar_url, voice_url, is_admin, created_at, updated_at
 `
 
-type SetUserAvatarIDParams struct {
+type SetUserAvatarAndVoiceIDParams struct {
 	AvatarUrl sql.NullString
+	VoiceUrl  sql.NullString
+	UpdatedAt sql.NullTime
 	ID        string
 }
 
-func (q *Queries) SetUserAvatarID(ctx context.Context, arg SetUserAvatarIDParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, setUserAvatarID, arg.AvatarUrl, arg.ID)
+func (q *Queries) SetUserAvatarAndVoiceID(ctx context.Context, arg SetUserAvatarAndVoiceIDParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, setUserAvatarAndVoiceID,
+		arg.AvatarUrl,
+		arg.VoiceUrl,
+		arg.UpdatedAt,
+		arg.ID,
+	)
 	var i User
 	err := row.Scan(
 		&i.ID,

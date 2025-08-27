@@ -1,4 +1,4 @@
-package httpapi
+package fifS3
 
 import (
 	"context"

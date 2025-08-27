@@ -36,13 +36,11 @@ func (cfg *apiConfig) handlerFifMeta(w http.ResponseWriter, r *http.Request) {
 		Personalized  string `json:"personalize"`
 		ClientName    string `json:"client_name"`
 		ClientAddress string `json:"client_address"`
-		UserID        string `json:"user_id"`
-		TemplateID    string `json:"template_id"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	var fif_params params
-	err = decoder.Decode(&fif_params)
+	var fifParams params
+	err = decoder.Decode(&fifParams)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "error decoding fif parameters", err)
 		return
@@ -51,8 +49,8 @@ func (cfg *apiConfig) handlerFifMeta(w http.ResponseWriter, r *http.Request) {
 	fifMeta, err := cfg.db.CreateFifMeta(r.Context(), database.CreateFifMetaParams{
 		ID:          uuid.New().String(),
 		UserID:      user.ID,
-		Title:       fif_params.Title,
-		Description: sql.NullString{String: fif_params.Personalized, Valid: fif_params.Personalized != ""},
+		Title:       fifParams.Title,
+		Description: sql.NullString{String: fifParams.Personalized, Valid: fifParams.Personalized != ""},
 	})
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't make fif meta", err)

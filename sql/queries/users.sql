@@ -21,5 +21,5 @@ SELECT * FROM users WHERE id = ?;
 
 
 
--- name: SetUserAvatarID :one
-UPDATE users SET avatar_url = ? WHERE id = ? RETURNING *;
+-- name: SetUserAvatarAndVoiceID :one
+UPDATE users SET avatar_url = ?, voice_url = ?, updated_at = ? WHERE id = ? RETURNING *;
