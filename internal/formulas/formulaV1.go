@@ -1,11 +1,17 @@
 package formulas
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/thom151/fif/internal/editor"
 )
@@ -27,14 +33,19 @@ var defaultOverlayConfig = editor.OverlayFadeConfig{
 	Preset:   "veryfast",
 }
 
-func FormulaV1(ctx context.Context, base, avatarPath, brollPath, fifPath string) (fifFinalPath string, err error) {
+func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath string, cutIndex int) (fifFinalPath string, err error) {
 
-	avatarDuration, err := editor.GetTotalDuration(avatarPath)
+	avatarAudio, err := extractAudio(avatarPath)
 	if err != nil {
-		return "", fmt.Errorf("error getting avatar duration : %v", err)
+		return "", fmt.Errorf("error extracting audio: %v", err)
 	}
+	timestamp, err := getCutTimestamp(dgKey, avatarAudio, cutIndex)
+	if err != nil {
+		return "", fmt.Errorf("failed to get timestamp: %v", err)
+	}
+
 	cutAvatar := filepath.Join(base, "cut.mp4")
-	err = editor.CutAndSaveVideo(avatarPath, cutAvatar, 0, avatarDuration-0.7, defaultVF)
+	err = editor.CutAndSaveVideo(avatarPath, cutAvatar, 0, timestamp-0.2, defaultVF)
 	if err != nil {
 		return "", fmt.Errorf("error cutting avatar: %v", err)
 	}
@@ -44,7 +55,7 @@ func FormulaV1(ctx context.Context, base, avatarPath, brollPath, fifPath string)
 	avatarNormalized := filepath.Join(base, "avatar_norm.mp4")
 	brollNormalized := filepath.Join(base, "broll_norm.mp4")
 
-	if err := editor.NormalizeVideoV2(ctx, avatarPath, avatarNormalized, defaultVF); err != nil {
+	if err := editor.NormalizeVideoV2(ctx, cutAvatar, avatarNormalized, defaultVF); err != nil {
 		return "", fmt.Errorf("normalize avatar: %w", err)
 	}
 	if err := editor.NormalizeVideoV2(ctx, brollPath, brollNormalized, defaultVF); err != nil {
@@ -72,16 +83,160 @@ func FormulaV1(ctx context.Context, base, avatarPath, brollPath, fifPath string)
 	}
 	defer os.Remove(concatenated)
 
+	emptyColor := filepath.Join(base, "color.mp4")
+	colorPath, err := editor.AddColorFadeOverlay(ctx, concatenated, emptyColor, defaultOverlayConfig)
+	if err != nil {
+		return "", fmt.Errorf("failed to put overlay: %v", err)
+	}
+	defer os.Remove(colorPath)
+
+	fifDuration, err := editor.GetTotalDuration(colorPath)
+	if err != nil {
+		return "", fmt.Errorf("error getting avatar duration : %v", err)
+	}
+
+	wd, _ := os.Getwd()
+	musicPath := filepath.Join(wd, "internal", "assets", "prelist.mp3")
+
+	cutAudio := filepath.Join(base, "cut_audio.mp3")
+	err = editor.CutAndSaveAudio(musicPath, cutAudio, fifDuration, defaultVF)
+	if err != nil {
+		return "", fmt.Errorf("failed to cut audio: %v", err)
+	}
+	defer os.Remove(cutAudio)
+
 	outPath := fifPath
 	if outPath == "" {
 		outPath = filepath.Join(base, "final.mp4")
 	}
 
-	out, err := editor.AddColorFadeOverlay(ctx, concatenated, outPath, defaultOverlayConfig)
+	out, err := editor.OverlayAudio(colorPath, cutAudio, outPath, defaultVF)
 	if err != nil {
-		return "", fmt.Errorf("failed to put overlay: %v", err)
+		return "", fmt.Errorf("failed to overlay music: %v", err)
 	}
 
 	return out, nil
 
+}
+
+func getCutTimestamp(key, audioPath string, index int) (float64, error) {
+	url := "https://api.deepgram.com/v1/listen?smart_format=true"
+	//nolint:gosec // G304: safePath-validated
+	file, err := os.Open(audioPath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	req, err := http.NewRequest("POST", url, file)
+	if err != nil {
+		return 0, err
+	}
+
+	req.Header.Set("Authorization", "Token "+key)
+	req.Header.Set("Content-Type", "audio/mpeg")
+
+	c := &http.Client{}
+	resp, err := c.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	var dgSmartResp deepgramSmartResponse
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&dgSmartResp)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(dgSmartResp.Results.Channels) == 0 || len(dgSmartResp.Results.Channels[0].Alternatives) == 0 {
+		return 0, fmt.Errorf("no transcript results from deepgram")
+	}
+
+	indexTime := dgSmartResp.Results.Channels[0].Alternatives[0].Words[index].Start
+
+	return indexTime, nil
+}
+
+func extractAudio(videoPath string) (string, error) {
+	dir := filepath.Dir(videoPath)
+	base := filepath.Base(videoPath)
+	audioFileName := strings.Replace(base, "video-", "audio-", 1)
+	audioFileName = strings.Replace(audioFileName, ".mp4", ".mp3", 1)
+	audioPath := filepath.Join(dir, audioFileName)
+
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		return "", fmt.Errorf("error creating directory %s: %w", dir, err)
+	}
+
+	//nolint:gosec // G204: videoPath and audioPath are safePath-validated
+	args := []string{
+		"-i", videoPath,
+		"-vn", // no video
+		"-af", "volume=1.5",
+		"-acodec", "mp3",
+		audioPath,
+	}
+
+	cmd := exec.Command("ffmpeg", args...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	log.Printf("Running ffmpeg extract audio command: %v", cmd.Args)
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to extract audio: %v", err)
+	}
+
+	if _, err := os.Stat(audioPath); err != nil {
+		return "", fmt.Errorf("audio file was not created: %v", err)
+	}
+
+	return audioPath, nil
+}
+
+type deepgramSmartResponse struct {
+	Metadata struct {
+		TransactionKey string    `json:"transaction_key"`
+		RequestID      string    `json:"request_id"`
+		Sha256         string    `json:"sha256"`
+		Created        time.Time `json:"created"`
+		Duration       float64   `json:"duration"`
+		Channels       int       `json:"channels"`
+		Models         []string  `json:"models"`
+		ModelInfo      struct {
+			NAMING_FAILED struct {
+				Name    string `json:"name"`
+				Version string `json:"version"`
+				Arch    string `json:"arch"`
+			} `json:""`
+		} `json:"model_info"`
+	} `json:"metadata"`
+	Results struct {
+		Channels []struct {
+			Alternatives []struct {
+				Transcript string  `json:"transcript"`
+				Confidence float64 `json:"confidence"`
+				Words      []struct {
+					Word           string  `json:"word"`
+					Start          float64 `json:"start"`
+					End            float64 `json:"end"`
+					Confidence     float64 `json:"confidence"`
+					PunctuatedWord string  `json:"punctuated_word"`
+				} `json:"words"`
+				Paragraphs struct {
+					Transcript string `json:"transcript"`
+					Paragraphs []struct {
+						Sentences []struct {
+							Text  string  `json:"text"`
+							Start float64 `json:"start"`
+							End   float64 `json:"end"`
+						} `json:"sentences"`
+						NumWords int     `json:"num_words"`
+						Start    float64 `json:"start"`
+						End      float64 `json:"end"`
+					} `json:"paragraphs"`
+				} `json:"paragraphs"`
+			} `json:"alternatives"`
+		} `json:"channels"`
+	} `json:"results"`
 }

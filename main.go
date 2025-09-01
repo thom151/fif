@@ -25,6 +25,7 @@ type apiConfig struct {
 	s3Region          string
 	s3Bucket          string
 	heygenApiKey      string
+	deepgramApiKey    string
 	openaiClient      *openai.Client
 	openaiAssistantID string
 	tempDir           string
@@ -79,6 +80,11 @@ func main() {
 		log.Fatal("ASSISTANT_ID not set")
 	}
 
+	deepgramApiKey := os.Getenv("DEEPGRAM_API_KEY")
+	if assistantID == "" {
+		log.Fatal("DEEPGRAM_API_KEY not set")
+	}
+
 	awsCfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(s3Region))
 	if err != nil {
 		log.Fatal(err)
@@ -100,6 +106,7 @@ func main() {
 		s3Bucket:          s3Bucket,
 		s3Region:          s3Region,
 		heygenApiKey:      heygenApiKey,
+		deepgramApiKey:    deepgramApiKey,
 		openaiClient:      openai.NewClient(openaiApiKey),
 		openaiAssistantID: assistantID,
 		tempDir:           tempBase,

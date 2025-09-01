@@ -16,6 +16,7 @@ type CutWord struct {
 
 type openaiSmartResponse struct {
 	FullScript string `json:"intro"`
+	CutIndex   int    `json:"cut_index"`
 }
 
 func GenThread(ctx context.Context, c *openai.Client) (openai.Thread, error) {

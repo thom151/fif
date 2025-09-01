@@ -88,7 +88,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	empttyFifOutPath := filepath.Join(base, "fif.mp4")
 
 	//GENERATE HEYGEN THEN DOWNLOAD IN GET THE FILENAME
-	avatarOutPath, err := heygen.GenerateAndDownloadAvatar(r.Context(), cfg.heygenApiKey, fifScript, user.AvatarUrl.String, user.VoiceUrl.String, fif.Title, emptyAvatarOutPath)
+	avatarOutPath, err := heygen.GenerateAndDownloadAvatar(r.Context(), cfg.heygenApiKey, fifScript.FullScript, user.AvatarUrl.String, user.VoiceUrl.String, fif.Title, emptyAvatarOutPath)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't generate avatar", err)
 		return
@@ -101,7 +101,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	}
 
 	//CONCATENATE HEYGEN + BROLL
-	finalPath, err := formulas.FormulaV1(r.Context(), base, avatarOutPath, brollOutPath, empttyFifOutPath)
+	finalPath, err := formulas.FormulaV1(r.Context(), cfg.deepgramApiKey, base, avatarOutPath, brollOutPath, empttyFifOutPath, fifScript.CutIndex)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't formulate", err)
 		return

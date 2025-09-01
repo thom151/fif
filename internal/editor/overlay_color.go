@@ -18,7 +18,7 @@ type OverlayFadeConfig struct {
 // AddColorFadeOverlay places a colored layer over the video and fades its alpha to 0.
 func AddColorFadeOverlay(ctx context.Context, inputPath, outputPath string, cfg OverlayFadeConfig) (string, error) {
 	if cfg.Color == "" {
-		cfg.Color = "#00ff00@1.0" // bright green
+		cfg.Color = "#70BF44@0.16" // bright green
 	}
 	if cfg.Duration <= 0 {
 		cfg.Duration = 2.0
@@ -27,16 +27,15 @@ func AddColorFadeOverlay(ctx context.Context, inputPath, outputPath string, cfg 
 	colorDur := cfg.Start + cfg.Duration + 0.1
 
 	// Build filtergraph for full-frame vs boxed overlay.
-	var filter string
 	// Full-frame overlay that auto-matches input size.
-	filter = fmt.Sprintf(
+	filter := fmt.Sprintf(
 		`[0:v]format=rgba[base];`+
-			`color=c=%s:s=16x16:d=%g[green];`+
-			`[green][base]scale2ref=w=iw:h=ih[green_sized][base_sized];`+
-			`[green_sized]format=rgba,fade=t=out:st=%g:d=%g:alpha=1[fg];`+
-			// no shortest=1 — or explicitly eof_action=pass
-			`[base_sized][fg]overlay=0:0:eof_action=pass`,
-		cfg.Color, colorDur,
+			`color=c='%s':s=16x16:d=%g[solid];`+
+			`[solid][base]scale2ref=w=iw:h=ih[fg][base_sized];`+
+			`[fg]format=rgba,fade=t=out:st=%g:d=%g:alpha=1[fgfaded];`+
+			`[base_sized][fgfaded]overlay=0:0:eof_action=pass`,
+		"0x70BF44@0.16", // use 0x… and wrap in single quotes
+		colorDur,
 		cfg.Start, cfg.Duration,
 	)
 	crf := 20
