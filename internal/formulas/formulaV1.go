@@ -83,14 +83,18 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath 
 	}
 	defer os.Remove(concatenated)
 
-	emptyColor := filepath.Join(base, "color.mp4")
-	colorPath, err := editor.AddColorFadeOverlay(ctx, concatenated, emptyColor, defaultOverlayConfig)
-	if err != nil {
-		return "", fmt.Errorf("failed to put overlay: %v", err)
-	}
-	defer os.Remove(colorPath)
+	/*
+		emptyColor := filepath.Join(base, "color.mp4")
+		colorPath, err := editor.AddColorFadeOverlay(ctx, concatenated, emptyColor, defaultOverlayConfig)
+		if err != nil {
+			return "", fmt.Errorf("failed to put overlay: %v", err)
+		}
+		defer os.Remove(colorPath)
+	*/
 
-	fifDuration, err := editor.GetTotalDuration(colorPath)
+	log.Printf("color overlay successful")
+
+	fifDuration, err := editor.GetTotalDuration(concatenated)
 	if err != nil {
 		return "", fmt.Errorf("error getting avatar duration : %v", err)
 	}
@@ -110,10 +114,12 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath 
 		outPath = filepath.Join(base, "final.mp4")
 	}
 
-	out, err := editor.OverlayAudio(colorPath, cutAudio, outPath, defaultVF)
+	out, err := editor.OverlayAudio(concatenated, cutAudio, outPath, defaultVF)
 	if err != nil {
 		return "", fmt.Errorf("failed to overlay music: %v", err)
 	}
+
+	log.Printf("overlay audio successful")
 
 	return out, nil
 

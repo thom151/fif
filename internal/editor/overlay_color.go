@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 type OverlayFadeConfig struct {
@@ -18,54 +19,55 @@ type OverlayFadeConfig struct {
 // AddColorFadeOverlay places a colored layer over the video and fades its alpha to 0.
 func AddColorFadeOverlay(ctx context.Context, inputPath, outputPath string, cfg OverlayFadeConfig) (string, error) {
 	if cfg.Color == "" {
-		cfg.Color = "#70BF44@0.16" // bright green
+		cfg.Color = "#70BF44"
 	}
 	if cfg.Duration <= 0 {
 		cfg.Duration = 2.0
 	}
-	// Overlay generator must exist long enough to cover the fade interval.
-	colorDur := cfg.Start + cfg.Duration + 0.1
+	if cfg.CRF <= 0 {
+		cfg.CRF = 20
+	}
+	if cfg.Preset == "" {
+		cfg.Preset = "veryfast"
+	}
 
-	// Build filtergraph for full-frame vs boxed overlay.
-	// Full-frame overlay that auto-matches input size.
+	// ~16% opacity (Premiere “Opacity: 16”)
+	const baseOpacity = 0.16
+
+	// Make the color source way longer than the input (24h).
+	const veryLong = 24.0 * 60.0 * 60.0
+
+	// Strip accidental @alpha in cfg.Color to avoid "#rrggbb@x@y"
+	col := cfg.Color
+	if i := strings.Index(col, "@"); i >= 0 {
+		col = col[:i]
+	}
+
 	filter := fmt.Sprintf(
 		`[0:v]format=rgba[base];`+
-			`color=c='%s':s=16x16:d=%g[solid];`+
-			`[solid][base]scale2ref=w=iw:h=ih[fg][base_sized];`+
-			`[fg]format=rgba,fade=t=out:st=%g:d=%g:alpha=1[fgfaded];`+
-			`[base_sized][fgfaded]overlay=0:0:eof_action=pass`,
-		"0x70BF44@0.16", // use 0x… and wrap in single quotes
-		colorDur,
-		cfg.Start, cfg.Duration,
+			`color=c=%s:s=16x16:d=%0.3f,format=rgba[solid];`+
+			`[solid][base]scale2ref=w=iw:h=ih[ovl][base_sized];`+
+			`[ovl]colorchannelmixer=aa=%0.3f,fade=t=out:st=%0.3f:d=%0.3f:alpha=1[ovl_faded];`+
+			`[base_sized][ovl_faded]blend=all_mode=multiply:all_opacity=1[vout]`,
+		col, veryLong, baseOpacity, cfg.Start, cfg.Duration,
 	)
-	crf := 20
-	if cfg.CRF > 0 {
-		crf = cfg.CRF
-	}
-	preset := "veryfast"
-	if cfg.Preset != "" {
-		preset = cfg.Preset
-	}
 
 	args := []string{
-		"-y", "-i", inputPath,
+		"-y",
+		"-i", inputPath,
 		"-filter_complex", filter,
-		// Re-encode video due to filtering; keep audio stream as-is.
-		"-c:v", "libx264", "-crf", fmt.Sprint(crf), "-preset", preset,
+		"-map", "[vout]",
+		"-map", "0:a?",
+		"-c:v", "libx264", "-crf", fmt.Sprint(cfg.CRF), "-preset", cfg.Preset,
 		"-pix_fmt", "yuv420p",
 		"-c:a", "copy",
 		"-movflags", "+faststart",
 		outputPath,
 	}
 
-	if _, err := exec.LookPath("ffmpeg"); err != nil {
-		return "", fmt.Errorf("ffmpeg not found in PATH: %w", err)
-	}
-
-	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 	var stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 	cmd.Stderr = &stderr
-
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("ffmpeg failed: %v\n%s", err, stderr.String())
 	}
