@@ -18,6 +18,7 @@ import (
 
 type fifVideoParameters struct {
 	BrollID       string `json:"broll_id"`
+	MusicID       string `json:"music_id"`
 	AgentName     string `json:"agent_name"`
 	ClientName    string `json:"client_name"`
 	ClientAddress string `json:"client_address"`
@@ -72,6 +73,8 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	music, err := cfg.db.GetMusicById(r.Context(), fifVideoParams.MusicID)
+
 	fifDetails := fmt.Sprintf("Agent Name: %s, Client Name: %s, Client Address: %s", fifVideoParams.AgentName, fifVideoParams.ClientName, fifVideoParams.ClientAddress)
 
 	fifScript, err := openai.GenerateFifScript(r.Context(), cfg.openaiClient, fifDetails, cfg.openaiAssistantID)
@@ -85,6 +88,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	base := filepath.Join(cfg.tempDir, user.ID, taskID)
 	emptyAvatarOutPath := filepath.Join(base, "avatar.mp4")
 	emptyBrollOutPath := filepath.Join(base, "broll.mp4")
+	emptyMusicOutPath := filepath.Join(base, "music.mp3")
 	empttyFifOutPath := filepath.Join(base, "fif.mp4")
 
 	//GENERATE HEYGEN THEN DOWNLOAD IN GET THE FILENAME
@@ -100,8 +104,14 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	musicOutPath, err := fifS3.DownloadAssetFromS3(r.Context(), music.S3Url.String, cfg.s3Bucket, emptyMusicOutPath)
+	if err != nil {
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't download broll", err)
+		return
+	}
+
 	//CONCATENATE HEYGEN + BROLL
-	finalPath, err := formulas.FormulaV1(r.Context(), cfg.deepgramApiKey, base, avatarOutPath, brollOutPath, empttyFifOutPath, fifScript.CutIndex)
+	finalPath, err := formulas.FormulaV1(r.Context(), cfg.deepgramApiKey, base, avatarOutPath, brollOutPath, empttyFifOutPath, musicOutPath, fifScript.CutIndex)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't formulate", err)
 		return

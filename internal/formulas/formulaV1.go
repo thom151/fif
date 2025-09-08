@@ -33,7 +33,7 @@ var defaultOverlayConfig = editor.OverlayFadeConfig{
 	Preset:   "veryfast",
 }
 
-func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath string, cutIndex int) (fifFinalPath string, err error) {
+func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath, musicPath string, cutIndex int) (fifFinalPath string, err error) {
 
 	avatarAudio, err := extractAudio(avatarPath)
 	if err != nil {
@@ -98,9 +98,6 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath 
 	if err != nil {
 		return "", fmt.Errorf("error getting avatar duration : %v", err)
 	}
-
-	wd, _ := os.Getwd()
-	musicPath := filepath.Join(wd, "internal", "assets", "prelist.mp3")
 
 	cutAudio := filepath.Join(base, "cut_audio.mp3")
 	err = editor.CutAndSaveAudio(musicPath, cutAudio, fifDuration, defaultVF)
