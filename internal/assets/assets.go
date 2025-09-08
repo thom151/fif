@@ -22,6 +22,10 @@ func GetAssestPath(mediaType string) string {
 	if len(parts) != 2 {
 		return ""
 	}
+
+	if parts[1] == "mpeg" {
+		parts[1] = "mp3"
+	}
 	ext := "." + parts[1]
 	return fmt.Sprintf("%s%s", randString, ext)
 

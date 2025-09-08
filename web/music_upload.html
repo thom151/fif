@@ -1,0 +1,31 @@
+{{ define "title" }}Home Page{{ end }}
+
+
+{{ define "script" }}
+
+<script src="/scripts/music_upload.js"></script>
+{{ end }}
+
+
+{{ define "content" }}
+<form id="music-meta-form">
+    <div class="input-group">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" required placeholder="Title">
+    </div>
+    <div class="input-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" placeholder="Description"></textarea>
+    </div>
+    <button type="submit" class="btn">Create Music</button>
+</form>
+
+<form id="music-upload-form" style="display: none;">
+    <div class="input-group">
+        <label for="music-file">File: </label>
+        <input type="file" id="music-file" name="music" required>
+    </div>
+    <button type="submit" class="btn">Upload Music</button>
+</form>
+
+{{ end }}

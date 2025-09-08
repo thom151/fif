@@ -26,8 +26,8 @@ var defaultVF = editor.VideoSeriesFormat{
 }
 
 var defaultOverlayConfig = editor.OverlayFadeConfig{
-	Color:    "#00ff00@1.0",
-	Start:    0.0,
+	Color:    "70bf44",
+	Opacity:  16,
 	Duration: 1.5,
 	CRF:      20,
 	Preset:   "veryfast",
@@ -45,7 +45,7 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath 
 	}
 
 	cutAvatar := filepath.Join(base, "cut.mp4")
-	err = editor.CutAndSaveVideo(avatarPath, cutAvatar, 0, timestamp-0.2, defaultVF)
+	err = editor.CutAndSaveVideo(avatarPath, cutAvatar, 0, timestamp-0.15, defaultVF)
 	if err != nil {
 		return "", fmt.Errorf("error cutting avatar: %v", err)
 	}
@@ -160,6 +160,23 @@ func getCutTimestamp(key, audioPath string, index int) (float64, error) {
 		return 0, fmt.Errorf("no transcript results from deepgram")
 	}
 
+	with := dgSmartResp.Results.Channels[0].Alternatives[0].Words[index].Word
+
+	if strings.ToLower(with) != "with" {
+
+		if strings.ToLower(dgSmartResp.Results.Channels[0].Alternatives[0].Words[index+1].Word) == "thank" {
+			log.Printf("returning timestamp early")
+			return dgSmartResp.Results.Channels[0].Alternatives[0].Words[index+1].Start, nil
+		}
+		log.Printf("iterating through all words")
+		for _, word := range dgSmartResp.Results.Channels[0].Alternatives[0].Words {
+			if strings.ToLower(word.Word) == "thank" {
+				return dgSmartResp.Results.Channels[0].Alternatives[0].Words[index].Start, nil
+			}
+		}
+	}
+
+	log.Printf("with got straight away")
 	indexTime := dgSmartResp.Results.Channels[0].Alternatives[0].Words[index].Start
 
 	return indexTime, nil

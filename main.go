@@ -130,9 +130,11 @@ func main() {
 
 	//API
 	mux.HandleFunc("POST /api/upload_broll/{brollID}", apiCfg.handlerUploadBroll)
+	mux.HandleFunc("POST /api/upload_music/{musicID}", apiCfg.handlerUploadMusic)
 	mux.HandleFunc("POST /api/delete_broll/{brollID}", apiCfg.handlerDeleteBroll)
 	mux.HandleFunc("POST /api/set_user_avatar_id", apiCfg.handlerSetUserAvatarAndVoiceID)
 	mux.HandleFunc("POST /api/create_broll_meta", apiCfg.handlerCreateBrollMeta)
+	mux.HandleFunc("POST /api/create_music_meta", apiCfg.handlerCreateMusicMeta)
 	mux.HandleFunc("POST /api/fif_meta", apiCfg.handlerFifMeta)
 	mux.HandleFunc("POST /api/create_fif_video/{fifID}", apiCfg.handlerCreateFifVideo)
 
@@ -141,6 +143,7 @@ func main() {
 
 	//FRONTEND
 	mux.HandleFunc("GET /upload_broll", apiCfg.handlerGetUploadBrollPage)
+	mux.HandleFunc("GET /upload_music", apiCfg.handlerGetUploadMusicPage)
 	mux.HandleFunc("GET /login", apiCfg.handlerGetLoginPage)
 
 	mux.HandleFunc("/healthz", handlerReadiness)

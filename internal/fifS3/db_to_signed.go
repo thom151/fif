@@ -30,6 +30,24 @@ func DbBrollToSignedBroll(broll database.Broll, s3client *s3.Client) (database.B
 	return broll, nil
 }
 
+func DbMusicToSignedMusic(music database.Music, s3client *s3.Client) (database.Music, error) {
+	if music.S3Url.String == "" {
+		return database.Music{}, nil
+	}
+	parts := strings.Split(music.S3Url.String, ",")
+	if len(parts) < 2 {
+		return database.Music{}, nil
+	}
+	bucket := parts[0]
+	key := parts[1]
+	presigned, err := GeneratePresignedURL(s3client, bucket, key, 5*time.Minute)
+	if err != nil {
+		return database.Music{}, err
+	}
+	music.S3Url.String = presigned
+	return music, nil
+}
+
 func GetKey(url string) (string, error) {
 	log.Printf("parsing url: %s \n", url)
 	parts := strings.Split(url, ",")
