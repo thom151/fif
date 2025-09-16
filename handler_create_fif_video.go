@@ -1,18 +1,27 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
+	"github.com/thom151/fif/internal/assets"
 	"github.com/thom151/fif/internal/auth"
+	"github.com/thom151/fif/internal/database"
 	"github.com/thom151/fif/internal/fifS3"
 	"github.com/thom151/fif/internal/formulas"
 	"github.com/thom151/fif/internal/heygen"
 	"github.com/thom151/fif/internal/httpapi"
+	"github.com/thom151/fif/internal/media"
 	"github.com/thom151/fif/internal/openai"
 )
 
@@ -74,6 +83,13 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	}
 
 	music, err := cfg.db.GetMusicById(r.Context(), fifVideoParams.MusicID)
+	if err != nil {
+		log.Printf("err: %v", err)
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't get fif", err)
+		return
+	}
+
+	log.Printf("got music url : %s\n", music.S3Url.String)
 
 	fifDetails := fmt.Sprintf("Agent Name: %s, Client Name: %s, Client Address: %s", fifVideoParams.AgentName, fifVideoParams.ClientName, fifVideoParams.ClientAddress)
 
@@ -106,7 +122,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 
 	musicOutPath, err := fifS3.DownloadAssetFromS3(r.Context(), music.S3Url.String, cfg.s3Bucket, emptyMusicOutPath)
 	if err != nil {
-		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't download broll", err)
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't download music", err)
 		return
 	}
 
@@ -118,5 +134,65 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	}
 
 	log.Printf("FiF path: %s\n", finalPath)
+
+	mediaType := "video/mp4"
+	key := assets.GetAssestPath(mediaType)
+	key = filepath.Join(user.ID, "fif", key)
+
+	processedFiF, err := media.ProcessVideoForFastStart(finalPath)
+	if err != nil {
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't process fif", err)
+		return
+	}
+
+	processedFiFFile, err := os.Open(processedFiF)
+	if err != nil {
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't open processed broll", err)
+		return
+	}
+	defer processedFiFFile.Close()
+
+	opCtx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+
+	log.Printf("trying to upload fif to s3")
+	_, err = cfg.s3Client.PutObject(opCtx, &s3.PutObjectInput{
+		Bucket:      aws.String(cfg.s3Bucket),
+		Key:         aws.String(key),
+		Body:        processedFiFFile,
+		ContentType: aws.String(mediaType),
+	})
+
+	if err != nil {
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading file to s3", err)
+		return
+	}
+	log.Printf("fif successfully uploaded")
+	bucketKey := fmt.Sprintf("%s,%s", cfg.s3Bucket, key)
+	fif.S3Url = sql.NullString{String: bucketKey, Valid: true}
+
+	_, err = cfg.db.UpdateFif(opCtx, database.UpdateFifParams{
+		Title:       fif.Title,
+		Description: fif.Description,
+		S3Url:       fif.S3Url,
+		UserID:      fif.UserID,
+		ID:          fif.ID,
+	})
+
+	if err != nil {
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "error updating broll url", err)
+		return
+	}
+
+	log.Printf("fif url successfuly updated")
+
+	fif, err = fifS3.DbFiFToSignedFiF(fif, cfg.s3Client)
+	if err != nil {
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't get signed broll", err)
+		return
+	}
+
+	log.Printf("fif link: %s\n", fif.S3Url.String)
+	httpapi.RespondWithJSON(w, http.StatusOK, fif)
 
 }

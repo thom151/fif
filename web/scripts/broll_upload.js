@@ -57,8 +57,8 @@ function showUploadComponent(brollID) {
 async function upload_broll(event) {
     event.preventDefault();
 
-  const form = event.target;
-  const brollID = form.dataset.brollID;
+  const form = event.currentTarget;
+  const brollID = form.dataset.brollID || form.dataset.brollId;
   const fileInput = form.querySelector("input[type=file]");
 
   const formData = new FormData();

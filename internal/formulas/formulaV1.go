@@ -26,10 +26,10 @@ var defaultVF = editor.VideoSeriesFormat{
 }
 
 var defaultOverlayConfig = editor.OverlayFadeConfig{
-	Color:    "70bf44",
-	Opacity:  16,
-	Duration: 1.5,
-	CRF:      20,
+	Color:    "#70bf44",
+	Opacity:  0.50,
+	Duration: 3,
+	CRF:      18,
 	Preset:   "veryfast",
 }
 
@@ -64,9 +64,20 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath,
 
 	log.Printf("avatar + broll successfully normalized")
 
+	emptyColor := filepath.Join(base, "color.mp4")
+	colorPath, err := editor.AddColorFadeOverlay(ctx, avatarNormalized, emptyColor, defaultOverlayConfig)
+	if err != nil {
+		return "", fmt.Errorf("failed to put overlay: %v", err)
+	}
+	defer os.Remove(colorPath)
+
+	log.Printf("color overlay successful")
+
+
+
 	concatList := filepath.Join(base, "concat.txt")
 	list := fmt.Sprintf("file '%s'\nfile '%s'\n",
-		filepath.Base(avatarNormalized),
+		filepath.Base(colorPath),
 		filepath.Base(brollNormalized),
 	)
 	if err := os.WriteFile(concatList, []byte(list), 0o600); err != nil {
@@ -82,17 +93,6 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath,
 		return "", fmt.Errorf("failed to concat videos: %v", err)
 	}
 	defer os.Remove(concatenated)
-
-	/*
-		emptyColor := filepath.Join(base, "color.mp4")
-		colorPath, err := editor.AddColorFadeOverlay(ctx, concatenated, emptyColor, defaultOverlayConfig)
-		if err != nil {
-			return "", fmt.Errorf("failed to put overlay: %v", err)
-		}
-		defer os.Remove(colorPath)
-	*/
-
-	log.Printf("color overlay successful")
 
 	fifDuration, err := editor.GetTotalDuration(concatenated)
 	if err != nil {

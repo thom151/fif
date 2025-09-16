@@ -35,11 +35,13 @@ func GenerateVideoHeygen(ctx context.Context, script, key, avatarId, voiceID, fi
 					InputText: script,
 					Emotion:   "Excited",
 					Speed:     1.0,
+					/*
 					ElevenLabs: &ElevenLabsSettings{
 						Stability:  0.35,
 						Similarity: 0.90,
 						Style:      0.70,
 					},
+					*/
 				},
 			},
 		},
