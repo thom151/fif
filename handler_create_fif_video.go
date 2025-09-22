@@ -113,18 +113,21 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't generate avatar", err)
 		return
 	}
+	defer os.Remove(avatarOutPath)
 	//DOWNLOAD THE BROLL
 	brollOutPath, err := fifS3.DownloadAssetFromS3(r.Context(), broll.S3Url.String, cfg.s3Bucket, emptyBrollOutPath)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't download broll", err)
 		return
 	}
+	defer os.Remove(brollOutPath)
 
 	musicOutPath, err := fifS3.DownloadAssetFromS3(r.Context(), music.S3Url.String, cfg.s3Bucket, emptyMusicOutPath)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't download music", err)
 		return
 	}
+	defer os.Remove(musicOutPath)
 
 	//CONCATENATE HEYGEN + BROLL
 	finalPath, err := formulas.FormulaV1(r.Context(), cfg.deepgramApiKey, base, avatarOutPath, brollOutPath, empttyFifOutPath, musicOutPath, fifScript.CutIndex)
@@ -132,6 +135,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't formulate", err)
 		return
 	}
+	defer os.Remove(finalPath)
 
 	log.Printf("FiF path: %s\n", finalPath)
 
@@ -151,6 +155,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	defer processedFiFFile.Close()
+	defer os.Remove(processedFiF)
 
 	opCtx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
@@ -168,8 +173,9 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	log.Printf("fif successfully uploaded")
-	bucketKey := fmt.Sprintf("%s,%s", cfg.s3Bucket, key)
-	fif.S3Url = sql.NullString{String: bucketKey, Valid: true}
+
+	urlCdn := fmt.Sprintf("%s/%s", cfg.s3CfDistribution, key)
+	fif.S3Url = sql.NullString{String: urlCdn, Valid: true}
 
 	_, err = cfg.db.UpdateFif(opCtx, database.UpdateFifParams{
 		Title:       fif.Title,
@@ -185,12 +191,14 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	}
 
 	log.Printf("fif url successfuly updated")
-
+	
+	/*
 	fif, err = fifS3.DbFiFToSignedFiF(fif, cfg.s3Client)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't get signed broll", err)
 		return
 	}
+	*/
 
 	log.Printf("fif link: %s\n", fif.S3Url.String)
 	httpapi.RespondWithJSON(w, http.StatusOK, fif)

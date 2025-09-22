@@ -24,6 +24,7 @@ type apiConfig struct {
 	s3Client          *s3.Client
 	s3Region          string
 	s3Bucket          string
+	s3CfDistribution  string
 	heygenApiKey      string
 	deepgramApiKey    string
 	openaiClient      *openai.Client
@@ -105,6 +106,7 @@ func main() {
 		s3Client:          client,
 		s3Bucket:          s3Bucket,
 		s3Region:          s3Region,
+		s3CfDistribution:  s3CfDistribution,
 		heygenApiKey:      heygenApiKey,
 		deepgramApiKey:    deepgramApiKey,
 		openaiClient:      openai.NewClient(openaiApiKey),
