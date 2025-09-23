@@ -98,6 +98,9 @@ func main() {
 	mux.HandleFunc("POST /api/delete_broll/{brollID}", apiCfg.handlerDeleteBroll)
 	mux.HandleFunc("POST /api/fif_meta", apiCfg.handlerFifMeta)
 
+	//virtual staging
+	mux.HandleFunc("POST /api/vs_test", apiCfg.handlerVritualStaging)
+
 	//GET API
 	mux.HandleFunc("GET /api/brolls", apiCfg.handlerGetBrolls)
 
