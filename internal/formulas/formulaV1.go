@@ -64,20 +64,20 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath,
 
 	log.Printf("avatar + broll successfully normalized")
 
-	emptyColor := filepath.Join(base, "color.mp4")
-	colorPath, err := editor.AddColorFadeOverlay(ctx, avatarNormalized, emptyColor, defaultOverlayConfig)
-	if err != nil {
-		return "", fmt.Errorf("failed to put overlay: %v", err)
-	}
-	defer os.Remove(colorPath)
+	/*
+		emptyColor := filepath.Join(base, "color.mp4")
+		colorPath, err := editor.AddColorFadeOverlay(ctx, avatarNormalized, emptyColor, defaultOverlayConfig)
+		if err != nil {
+			return "", fmt.Errorf("failed to put overlay: %v", err)
+		}
+		defer os.Remove(colorPath)
 
-	log.Printf("color overlay successful")
-
-
+		log.Printf("color overlay successful")
+	*/
 
 	concatList := filepath.Join(base, "concat.txt")
 	list := fmt.Sprintf("file '%s'\nfile '%s'\n",
-		filepath.Base(colorPath),
+		filepath.Base(avatarNormalized),
 		filepath.Base(brollNormalized),
 	)
 	if err := os.WriteFile(concatList, []byte(list), 0o600); err != nil {
