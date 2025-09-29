@@ -49,7 +49,7 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath,
 	if err != nil {
 		return "", fmt.Errorf("error cutting avatar: %v", err)
 	}
-	defer os.Remove(cutAvatar)
+	//	defer os.Remove(cutAvatar)
 	log.Printf("avatar successfully cut")
 
 	avatarNormalized := filepath.Join(base, "avatar_norm.mp4")
@@ -159,21 +159,23 @@ func getCutTimestamp(key, audioPath string, index int) (float64, error) {
 
 	with := dgSmartResp.Results.Channels[0].Alternatives[0].Words[index].Word
 
-	if strings.ToLower(with) != "with" {
+	if strings.ToLower(with) != "thank" {
 
 		if strings.ToLower(dgSmartResp.Results.Channels[0].Alternatives[0].Words[index+1].Word) == "thank" {
-			log.Printf("returning timestamp early")
+			log.Printf("returning timestamp early. Word: %s\n", dgSmartResp.Results.Channels[0].Alternatives[0].Words[index].Word)
 			return dgSmartResp.Results.Channels[0].Alternatives[0].Words[index+1].Start, nil
 		}
 		log.Printf("iterating through all words")
 		for _, word := range dgSmartResp.Results.Channels[0].Alternatives[0].Words {
+			log.Printf("Word: %s\n", word.Word)
 			if strings.ToLower(word.Word) == "thank" {
-				return dgSmartResp.Results.Channels[0].Alternatives[0].Words[index].Start, nil
+				log.Printf("iterated. Word: %s\n", word.Word)
+				return word.Start, nil
 			}
 		}
 	}
 
-	log.Printf("with got straight away")
+	log.Printf("thank got straight away. Word: %s\n", dgSmartResp.Results.Channels[0].Alternatives[0].Words[index].Word)
 	indexTime := dgSmartResp.Results.Channels[0].Alternatives[0].Words[index].Start
 
 	return indexTime, nil
