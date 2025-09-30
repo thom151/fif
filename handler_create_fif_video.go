@@ -9,14 +9,16 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	//	"github.com/aws/aws-sdk-go-v2/aws"
+	//	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 	"github.com/thom151/fif/internal/assets"
 	"github.com/thom151/fif/internal/auth"
 	"github.com/thom151/fif/internal/database"
+	"github.com/thom151/fif/internal/dropbox"
 	"github.com/thom151/fif/internal/fifS3"
 	"github.com/thom151/fif/internal/formulas"
 	"github.com/thom151/fif/internal/heygen"
@@ -160,22 +162,37 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	opCtx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
-	log.Printf("trying to upload fif to s3")
-	_, err = cfg.s3Client.PutObject(opCtx, &s3.PutObjectInput{
-		Bucket:      aws.String(cfg.s3Bucket),
-		Key:         aws.String(key),
-		Body:        processedFiFFile,
-		ContentType: aws.String(mediaType),
-	})
+	/*
+		log.Printf("trying to upload fif to s3")
+		_, err = cfg.s3Client.PutObject(opCtx, &s3.PutObjectInput{
+			Bucket:      aws.String(cfg.s3Bucket),
+			Key:         aws.String(key),
+			Body:        processedFiFFile,
+			ContentType: aws.String(mediaType),
+		})
 
-	if err != nil {
-		httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading file to s3", err)
-		return
+		if err != nil {
+			httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading file to s3", err)
+			return
+		}
+		log.Printf("fif successfully uploaded")
+
+		urlCdn := fmt.Sprintf("%s/%s", cfg.s3CfDistribution, key)
+	*/
+
+	finalFilePath := strings.TrimSuffix(processedFiF, ".processing")
+
+	if err := os.Rename(processedFiF, finalFilePath); err != nil {
+		log.Fatal("failed to rename processed file:", err)
 	}
-	log.Printf("fif successfully uploaded")
 
-	urlCdn := fmt.Sprintf("%s/%s", cfg.s3CfDistribution, key)
-	fif.S3Url = sql.NullString{String: urlCdn, Valid: true}
+	dropboxFolder := filepath.Join(user.ID, taskID)
+
+	dropboxPath, err := dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxApiKey)
+	if err != nil {
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to dropbox", err)
+	}
+	fif.S3Url = sql.NullString{String: dropboxPath, Valid: true}
 
 	_, err = cfg.db.UpdateFif(opCtx, database.UpdateFifParams{
 		Title:       fif.Title,
@@ -191,13 +208,13 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	}
 
 	log.Printf("fif url successfuly updated")
-	
+
 	/*
-	fif, err = fifS3.DbFiFToSignedFiF(fif, cfg.s3Client)
-	if err != nil {
-		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't get signed broll", err)
-		return
-	}
+		fif, err = fifS3.DbFiFToSignedFiF(fif, cfg.s3Client)
+		if err != nil {
+			httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't get signed broll", err)
+			return
+		}
 	*/
 
 	log.Printf("fif link: %s\n", fif.S3Url.String)

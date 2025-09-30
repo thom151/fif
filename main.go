@@ -25,6 +25,8 @@ type apiConfig struct {
 	s3Region          string
 	s3Bucket          string
 	s3CfDistribution  string
+	dropboxApiKey     string
+	dropboxFolder     string
 	heygenApiKey      string
 	deepgramApiKey    string
 	openaiClient      *openai.Client
@@ -64,6 +66,16 @@ func main() {
 	s3CfDistribution := os.Getenv("S3_CF_DISTRO")
 	if s3CfDistribution == "" {
 		log.Fatal("S3_CF_DISTRO environment variable is not set")
+	}
+
+	dropboxApiKey := os.Getenv("DROPBOX_API_KEY")
+	if dropboxApiKey == "" {
+		log.Fatal("DROPBOX_API_KEY environment variable is not set")
+	}
+
+	dropboxFolder := os.Getenv("DROPBOX_FOLDER")
+	if dropboxFolder == "" {
+		log.Fatal("DROPBOX_FOLDER environment variable is not set")
 	}
 
 	heygenApiKey := os.Getenv("HEYGEN_API_KEY")
@@ -107,6 +119,8 @@ func main() {
 		s3Bucket:          s3Bucket,
 		s3Region:          s3Region,
 		s3CfDistribution:  s3CfDistribution,
+		dropboxApiKey:     dropboxApiKey,
+		dropboxFolder:     dropboxFolder,
 		heygenApiKey:      heygenApiKey,
 		deepgramApiKey:    deepgramApiKey,
 		openaiClient:      openai.NewClient(openaiApiKey),
