@@ -39,6 +39,8 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath,
 	if err != nil {
 		return "", fmt.Errorf("error extracting audio: %v", err)
 	}
+	defer os.Remove(avatarAudio)
+
 	timestamp, err := getCutTimestamp(dgKey, avatarAudio, cutIndex)
 	if err != nil {
 		return "", fmt.Errorf("failed to get timestamp: %v", err)
@@ -49,7 +51,7 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath,
 	if err != nil {
 		return "", fmt.Errorf("error cutting avatar: %v", err)
 	}
-	//	defer os.Remove(cutAvatar)
+	defer os.Remove(cutAvatar)
 	log.Printf("avatar successfully cut")
 
 	avatarNormalized := filepath.Join(base, "avatar_norm.mp4")

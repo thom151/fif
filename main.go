@@ -3,35 +3,41 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/joho/godotenv"
 	"github.com/sashabaranov/go-openai"
 	"github.com/thom151/fif/internal/database"
+	"github.com/thom151/fif/internal/dropbox"
 	"github.com/thom151/fif/internal/httpapi"
 
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 type apiConfig struct {
-	db                *database.Queries
-	jwtSecret         string
-	s3Client          *s3.Client
-	s3Region          string
-	s3Bucket          string
-	s3CfDistribution  string
-	dropboxApiKey     string
-	dropboxFolder     string
-	heygenApiKey      string
-	deepgramApiKey    string
-	openaiClient      *openai.Client
-	openaiAssistantID string
-	tempDir           string
+	db                       *database.Queries
+	jwtSecret                string
+	s3Client                 *s3.Client
+	s3Region                 string
+	s3Bucket                 string
+	s3CfDistribution         string
+	dropboxAccToken          string
+	dropboxAccTokenExpiresAt time.Time
+	dropboxRefreshToken      string
+	dropboxClientID          string
+	dropboxClientSecret      string
+	heygenApiKey             string
+	deepgramApiKey           string
+	openaiClient             *openai.Client
+	openaiAssistantID        string
+	tempDir                  string
 }
 
 func main() {
@@ -67,16 +73,33 @@ func main() {
 	if s3CfDistribution == "" {
 		log.Fatal("S3_CF_DISTRO environment variable is not set")
 	}
-
-	dropboxApiKey := os.Getenv("DROPBOX_API_KEY")
-	if dropboxApiKey == "" {
-		log.Fatal("DROPBOX_API_KEY environment variable is not set")
+	dropboxRefreshToken := os.Getenv("DROPBOX_REFRESH_TOKEN")
+	if dropboxRefreshToken == "" {
+		log.Fatal("DROPBOX_REFRESH_TOKEN environment variable is not set")
 	}
 
-	dropboxFolder := os.Getenv("DROPBOX_FOLDER")
-	if dropboxFolder == "" {
-		log.Fatal("DROPBOX_FOLDER environment variable is not set")
+	dropboxClientID := os.Getenv("DROPBOX_CLIENT_ID")
+	if dropboxClientID == "" {
+		log.Fatal("DROPBOX_CLIENT_ID environment variable is not set")
 	}
+
+	dropboxClientSecret := os.Getenv("DROPBOX_CLIENT_SECRET")
+	if dropboxClientSecret == "" {
+		log.Fatal("DROPBOX_CLIENT_SECRET environment variable is not set")
+	}
+
+	dropboxAccToken, err := dropbox.GetNewAccessToken(dropboxRefreshToken, dropboxClientID, dropboxClientSecret)
+	if err != nil {
+		log.Fatal("DROPBOX_ACC_TOKEN cannot get")
+	}
+
+	fmt.Printf("ACC TOKEN: %s\n", dropboxAccToken.AccessToken)
+
+	/*
+		dropboxAccToken := os.Getenv("DROPBOX_ACC_TOKEN")
+		if dropboxAccToken == "" {
+			log.Fatal("DROPBOX_ACC_TOKEN environment variable is not set")
+		}*/
 
 	heygenApiKey := os.Getenv("HEYGEN_API_KEY")
 	if heygenApiKey == "" {
@@ -113,19 +136,22 @@ func main() {
 		log.Fatal(err)
 	}
 	apiCfg := apiConfig{
-		db:                dbQueries,
-		jwtSecret:         secret,
-		s3Client:          client,
-		s3Bucket:          s3Bucket,
-		s3Region:          s3Region,
-		s3CfDistribution:  s3CfDistribution,
-		dropboxApiKey:     dropboxApiKey,
-		dropboxFolder:     dropboxFolder,
-		heygenApiKey:      heygenApiKey,
-		deepgramApiKey:    deepgramApiKey,
-		openaiClient:      openai.NewClient(openaiApiKey),
-		openaiAssistantID: assistantID,
-		tempDir:           tempBase,
+		db:                       dbQueries,
+		jwtSecret:                secret,
+		s3Client:                 client,
+		s3Bucket:                 s3Bucket,
+		s3Region:                 s3Region,
+		s3CfDistribution:         s3CfDistribution,
+		dropboxAccToken:          dropboxAccToken.AccessToken,
+		dropboxAccTokenExpiresAt: time.Now().Add(time.Duration(dropboxAccToken.ExpiresIn) * time.Second),
+		dropboxRefreshToken:      dropboxRefreshToken,
+		dropboxClientID:          dropboxClientID,
+		dropboxClientSecret:      dropboxClientSecret,
+		heygenApiKey:             heygenApiKey,
+		deepgramApiKey:           deepgramApiKey,
+		openaiClient:             openai.NewClient(openaiApiKey),
+		openaiAssistantID:        assistantID,
+		tempDir:                  tempBase,
 	}
 
 	if err != nil {
@@ -156,6 +182,9 @@ func main() {
 
 	//GET API
 	mux.HandleFunc("GET /api/brolls", apiCfg.handlerGetBrolls)
+
+	// TEST ENDPOINTS
+	mux.HandleFunc("POST /api/test_upload", apiCfg.handlerTestUploadV2)
 
 	//FRONTEND
 	mux.HandleFunc("GET /upload_broll", apiCfg.handlerGetUploadBrollPage)

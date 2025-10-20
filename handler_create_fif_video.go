@@ -186,15 +186,24 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		log.Fatal("failed to rename processed file:", err)
 	}
 
-	dropboxFolder := filepath.Join(user.ID, taskID)
+	dropboxFolder := filepath.Join(user.Email, time.Now().Format("02-01-2006"), fifVideoParams.ClientAddress)
 
-	dropboxPath, err := dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxApiKey)
+	if time.Now().After(cfg.dropboxAccTokenExpiresAt) {
+		newAccTok, err := dropbox.GetNewAccessToken(cfg.dropboxRefreshToken, cfg.dropboxClientID, cfg.dropboxClientSecret)
+		if err != nil {
+			httpapi.RespondWithError(w, http.StatusInternalServerError, "error getting acces token", err)
+			return
+		}
+		cfg.dropboxAccToken = newAccTok.AccessToken
+	}
+
+	dropboxPath, err := dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxAccToken)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to dropbox", err)
 		return
 	}
 
-	link, err := dropbox.GetDropboxLink(dropboxPath, cfg.dropboxApiKey)
+	link, err := dropbox.GetDropboxLink(dropboxPath, cfg.dropboxAccToken)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "error getting dropbox link", err)
 		return
