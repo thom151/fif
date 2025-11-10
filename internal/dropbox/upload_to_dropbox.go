@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/files"
@@ -71,6 +70,8 @@ func listFolder(path, token string) ([]string, error) {
 		entry := e.(map[string]any)
 		names = append(names, entry["name"].(string))
 	}
+
+	fmt.Sprintf("folders successfully listed")
 	return names, nil
 }
 
@@ -80,13 +81,15 @@ func getNewFileName(folder, base, ext, token string) string {
 		return base + ext
 	}
 	count := 0
-	for _, name := range files {
-		if strings.HasPrefix(name, base) && strings.HasSuffix(name, ext) {
-			count++
-		}
+	for _ = range files {
+		count++
 	}
 	if count == 0 {
 		return base + ext
 	}
 	return fmt.Sprintf("%s_%d%s", base, count+1, ext)
+}
+
+func main() {
+
 }
