@@ -107,7 +107,8 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	emptyAvatarOutPath := filepath.Join(base, "avatar.mp4")
 	emptyBrollOutPath := filepath.Join(base, "broll.mp4")
 	emptyMusicOutPath := filepath.Join(base, "music.mp3")
-	empttyFifOutPath := filepath.Join(base, "fif.mp4")
+
+	empttyFifOutPath := filepath.Join(base, fmt.Sprintf("%s_%d.mp4", fif, taskID))
 
 	//GENERATE HEYGEN THEN DOWNLOAD IN GET THE FILENAME
 	avatarOutPath, err := heygen.GenerateAndDownloadAvatar(r.Context(), cfg.heygenApiKey, fifScript.FullScript, user.AvatarUrl.String, user.VoiceUrl.String, fif.Title, emptyAvatarOutPath)
