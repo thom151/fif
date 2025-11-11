@@ -198,17 +198,18 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		cfg.dropboxAccToken = newAccTok.AccessToken
 	}
 
-	dropboxPath, err := dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxAccToken)
+	link, err := dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxAccToken)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to dropbox", err)
 		return
 	}
-
+/*
 	link, err := dropbox.GetDropboxLink(dropboxPath, cfg.dropboxAccToken)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "error getting dropbox link", err)
 		return
 	}
+	*/
 	fif.S3Url = sql.NullString{String: link, Valid: true}
 
 	_, err = cfg.db.UpdateFif(opCtx, database.UpdateFifParams{

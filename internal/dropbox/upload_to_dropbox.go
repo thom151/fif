@@ -2,16 +2,16 @@ package dropbox
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/files"
+	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/sharing"
+
+
 )
 
 func UploadToDropbox(filePath, folder, accToken string) (url string, err error) {
@@ -21,75 +21,45 @@ func UploadToDropbox(filePath, folder, accToken string) (url string, err error) 
 	}
 
 	client := files.New(config)
+	sharingClient := sharing.New(config)
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
 
-	//fileName := filepath.Base(filePath)
+	fileName := filepath.Base(filePath)
 
-	newName := getNewFileName(folder, "fif", ".mp4", accToken)
-	dropboxPath := filepath.Join("/", folder, newName)
+	//newName := getNewFileName(folder, "fif", ".mp4", accToken)
+	log.Printf("folder(raw): %q", folder)
+	fmt.Printf("fileName: %s\n", fileName)
+
+	dropboxPath := filepath.Join("/", folder, fileName)
 	arg := files.NewUploadArg(dropboxPath)
+	arg.Autorename = true
 
-	_, err = client.Upload(arg, bytes.NewReader(data))
+	res, err := client.Upload(arg, bytes.NewReader(data))
+	if err != nil {
+		fmt.Printf("error upload: %v", err)
+		return "", err
+	}
+
+	finalPath := res.PathDisplay
+
+	link, err := sharingClient.CreateSharedLinkWithSettings(
+	    sharing.NewCreateSharedLinkWithSettingsArg(finalPath),
+	)
 	if err != nil {
 		return "", err
 	}
 
-	log.Println("Uploaded file to dropbox: ", dropboxPath)
-	return dropboxPath, nil
+	if fileLink, ok := link.(*sharing.FileLinkMetadata); ok {
+		log.Println("Uploaded file to dropbox ", dropboxPath)
+		return fileLink.Url, nil
+	}
+
+	return "", fmt.Errorf("Unexpected link type: %T", link)
 
 }
 
-func listFolder(path, token string) ([]string, error) {
-	url := "https://api.dropboxapi.com/2/files/list_folder"
-	data := fmt.Sprintf(`{"path":"%s"}`, path)
 
-	req, _ := http.NewRequest("POST", url, bytes.NewBufferString(data))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-
-	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, err
-	}
-
-	entries, _ := result["entries"].([]any)
-	names := []string{}
-	for _, e := range entries {
-		entry := e.(map[string]any)
-		names = append(names, entry["name"].(string))
-	}
-
-	fmt.Sprintf("folders successfully listed")
-	return names, nil
-}
-
-func getNewFileName(folder, base, ext, token string) string {
-	files, err := listFolder(folder, token)
-	if err != nil {
-		return base + ext
-	}
-	count := 0
-	for _ = range files {
-		count++
-	}
-	if count == 0 {
-		return base + ext
-	}
-	return fmt.Sprintf("%s_%d%s", base, count+1, ext)
-}
-
-func main() {
-
-}
