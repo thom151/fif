@@ -6,12 +6,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/files"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/sharing"
-
-
 )
 
 func UploadToDropbox(filePath, folder, accToken string) (url string, err error) {
@@ -34,6 +33,8 @@ func UploadToDropbox(filePath, folder, accToken string) (url string, err error) 
 	log.Printf("folder(raw): %q", folder)
 	fmt.Printf("fileName: %s\n", fileName)
 
+	folder = strings.TrimSpace(folder)
+	folder = strings.ReplaceAll(folder, "/", "-")
 	dropboxPath := filepath.Join("/", folder, fileName)
 	arg := files.NewUploadArg(dropboxPath)
 	arg.Autorename = true
@@ -47,7 +48,7 @@ func UploadToDropbox(filePath, folder, accToken string) (url string, err error) 
 	finalPath := res.PathDisplay
 
 	link, err := sharingClient.CreateSharedLinkWithSettings(
-	    sharing.NewCreateSharedLinkWithSettingsArg(finalPath),
+		sharing.NewCreateSharedLinkWithSettingsArg(finalPath),
 	)
 	if err != nil {
 		return "", err
@@ -61,5 +62,3 @@ func UploadToDropbox(filePath, folder, accToken string) (url string, err error) 
 	return "", fmt.Errorf("Unexpected link type: %T", link)
 
 }
-
-

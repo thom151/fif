@@ -46,21 +46,45 @@ func NormalizeVideoV2(ctx context.Context, inPath, outPath string, vf VideoSerie
 	// Audio chain:
 	// - loudnorm: targets podcast/YouTube-friendly loudness
 	// - highpass: cut rumble; lowpass: tame top-end harshness (HeyGen often sounds a bit bright)
-	audioFilter := "loudnorm=I=-16:TP=-1.5:LRA=11,highpass=f=80,lowpass=f=12000"
+
+	/*
+		audioFilter := "loudnorm=I=-16:TP=-1.5:LRA=11,highpass=f=80,lowpass=f=12000"
+
+		args := []string{
+			"-y",
+			"-i", inPath,
+			// video normalization
+			"-r", vf.FrameRate, // e.g. 30
+			"-pix_fmt", vf.PixelFormat, // e.g. yuv420p
+			"-c:v", vf.VideoCodec, // e.g. libx264
+			// audio normalization
+			"-c:a", vf.AudioCodec, // e.g. aac
+			"-ar", vf.SampleRate, // e.g. 48000 or 44100
+			"-ac", "2", // stereo
+			"-af", audioFilter, // <- key addition
+			// keep MP4 streamable
+			"-movflags", "+faststart",
+			outPath,
+		}
+	*/
+
+	audioFilter := "loudnorm=I=-16:TP=-1.5:LRA=11,aresample=async=1:first_pts=0"
 
 	args := []string{
 		"-y",
+		"-fflags", "+genpts",
 		"-i", inPath,
-		// video normalization
-		"-r", vf.FrameRate, // e.g. 30
-		"-pix_fmt", vf.PixelFormat, // e.g. yuv420p
-		"-c:v", vf.VideoCodec, // e.g. libx264
-		// audio normalization
-		"-c:a", vf.AudioCodec, // e.g. aac
-		"-ar", vf.SampleRate, // e.g. 48000 or 44100
-		"-ac", "2", // stereo
-		"-af", audioFilter, // <- key addition
-		// keep MP4 streamable
+
+		// VIDEO: zero CPU (stream copy) → must already be H.264/yuv420p with your FPS
+		"-c:v", "copy",
+
+		// AUDIO: match your pipeline params so concat demuxer (-c copy) works
+		"-c:a", vf.AudioCodec, // aac
+		"-ar", vf.SampleRate, // "44100" (or "48000" if you standardize on 48k)
+		"-ac", "2",
+		"-af", audioFilter,
+
+		"-shortest",
 		"-movflags", "+faststart",
 		outPath,
 	}

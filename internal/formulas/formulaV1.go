@@ -46,13 +46,25 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath,
 		return "", fmt.Errorf("failed to get timestamp: %v", err)
 	}
 
-	cutAvatar := filepath.Join(base, "cut.mp4")
+	cutAvatar := filepath.Join(base, "cutAvatar.mp4")
 	err = editor.CutAndSaveVideo(avatarPath, cutAvatar, 0, timestamp-0.15, defaultVF)
 	if err != nil {
 		return "", fmt.Errorf("error cutting avatar: %v", err)
 	}
 	defer os.Remove(cutAvatar)
-	log.Printf("avatar successfully cut")
+
+	brollToTalDuration, err := editor.GetTotalDuration(brollPath)
+	if err != nil {
+		return "", fmt.Errorf("error getting total duration of broll: %v", err)
+	}
+
+	cutBroll := filepath.Join(base, "cutBroll.mp4")
+	err = editor.CutAndSaveVideo(brollPath, cutBroll, 0, brollToTalDuration, defaultVF)
+	if err != nil {
+		return "", fmt.Errorf("error cutting broll: %v", err)
+	}
+	defer os.Remove(cutBroll)
+	log.Printf("avatar + broll successfully cut")
 
 	avatarNormalized := filepath.Join(base, "avatar_norm.mp4")
 	brollNormalized := filepath.Join(base, "broll_norm.mp4")
@@ -60,22 +72,11 @@ func FormulaV1(ctx context.Context, dgKey, base, avatarPath, brollPath, fifPath,
 	if err := editor.NormalizeVideoV2(ctx, cutAvatar, avatarNormalized, defaultVF); err != nil {
 		return "", fmt.Errorf("normalize avatar: %w", err)
 	}
-	if err := editor.NormalizeVideoV2(ctx, brollPath, brollNormalized, defaultVF); err != nil {
+	if err := editor.NormalizeVideoV2(ctx, cutBroll, brollNormalized, defaultVF); err != nil {
 		return "", fmt.Errorf("normalize broll: %w", err)
 	}
 
 	log.Printf("avatar + broll successfully normalized")
-
-	/*
-		emptyColor := filepath.Join(base, "color.mp4")
-		colorPath, err := editor.AddColorFadeOverlay(ctx, avatarNormalized, emptyColor, defaultOverlayConfig)
-		if err != nil {
-			return "", fmt.Errorf("failed to put overlay: %v", err)
-		}
-		defer os.Remove(colorPath)
-
-		log.Printf("color overlay successful")
-	*/
 
 	concatList := filepath.Join(base, "concat.txt")
 	list := fmt.Sprintf("file '%s'\nfile '%s'\n",

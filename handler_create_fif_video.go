@@ -133,7 +133,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	defer os.Remove(musicOutPath)
 
 	//CONCATENATE HEYGEN + BROLL
-	finalPath, err := formulas.FormulaV1(r.Context(), cfg.deepgramApiKey, base, avatarOutPath, brollOutPath, empttyFifOutPath, musicOutPath, fifScript.CutIndex)
+	finalPath, err := formulas.FormulaV1_1(r.Context(), cfg.deepgramApiKey, base, avatarOutPath, brollOutPath, empttyFifOutPath, musicOutPath, fifScript.CutIndex)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "couldn't formulate", err)
 		return
@@ -203,13 +203,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to dropbox", err)
 		return
 	}
-/*
-	link, err := dropbox.GetDropboxLink(dropboxPath, cfg.dropboxAccToken)
-	if err != nil {
-		httpapi.RespondWithError(w, http.StatusInternalServerError, "error getting dropbox link", err)
-		return
-	}
-	*/
+
 	fif.S3Url = sql.NullString{String: link, Valid: true}
 
 	_, err = cfg.db.UpdateFif(opCtx, database.UpdateFifParams{
