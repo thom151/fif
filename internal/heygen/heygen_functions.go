@@ -24,7 +24,7 @@ func GenerateVideoHeygen(ctx context.Context, script, key, avatarId, voiceID, fi
 		VideoInputs: []VideoInput{
 			{
 				Character: &CharacterSettings{
-					Type:        "avatar",
+					Type:        "talking_photo",
 					AvatarID:    avatarId,
 					Scale:       1.0,
 					AvatarStyle: "normal",
