@@ -197,7 +197,7 @@ type VideoInput struct {
 
 type CharacterSettings struct {
 	Type        string  `json:"type"`
-	AvatarID    string  `json:"avatar_id"`
+	AvatarID    string  `json:"talking_photo_id"` // TO CHANGE TO "avatar_id" in case
 	Scale       float64 `json:"scale,omitempty"`
 	AvatarStyle string  `json:"avatar_style,omitempty"`
 }
