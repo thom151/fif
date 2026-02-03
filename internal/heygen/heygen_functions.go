@@ -24,17 +24,17 @@ func GenerateVideoHeygen(ctx context.Context, script, key, avatarId, voiceID, fi
 		VideoInputs: []VideoInput{
 			{
 				Character: &CharacterSettings{
-					Type:        "talking_photo",
-					AvatarID:    avatarId,
-					Scale:       1.0,
-					AvatarStyle: "normal",
+					Type:           "talking_photo",
+					TalkingPhotoID: avatarId,
+					Scale:          1.0,
+					AvatarStyle:    "normal",
 				},
 				Voice: VoiceSettings{
 					Type:      "text",
 					VoiceID:   voiceID,
 					InputText: script,
 					Emotion:   "Excited",
-					Speed:     1.0,	
+					Speed:     1.0,
 				},
 			},
 		},
@@ -196,10 +196,11 @@ type VideoInput struct {
 }
 
 type CharacterSettings struct {
-	Type        string  `json:"type"`
-	AvatarID    string  `json:"talking_photo_id"` // TO CHANGE TO "avatar_id" in case
-	Scale       float64 `json:"scale,omitempty"`
-	AvatarStyle string  `json:"avatar_style,omitempty"`
+	Type           string  `json:"type"`
+	TalkingPhotoID string  `json:"talking_photo_id,omitempty"`
+	AvatarID       string  `json:"avatar_id,omitempty"`
+	Scale          float64 `json:"scale,omitempty"`
+	AvatarStyle    string  `json:"avatar_style,omitempty"`
 }
 
 type VoiceSettings struct {
