@@ -34,7 +34,7 @@ func GenerateVideoHeygen(ctx context.Context, script, key, avatarId, voiceID, fi
 					VoiceID:   voiceID,
 					InputText: script,
 					Emotion:   "Excited",
-					Speed:     1.0,
+					Speed:     1.3,
 				},
 			},
 		},
