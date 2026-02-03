@@ -62,7 +62,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	}
 
 	log.Println(fifID)
-	log.Println(userUUID.String())
+	log.Println(userUUID.String(), user.Username)
 
 	decoder := json.NewDecoder(r.Body)
 	var fifVideoParams fifVideoParameters
@@ -140,7 +140,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 	}
 	defer os.Remove(finalPath)
 
-	log.Printf("FiF path: %s\n", finalPath)
+	log.Printf("FiF path for (%s) : %s\n", user.Username, finalPath)
 
 	mediaType := "video/mp4"
 	key := assets.GetAssestPath(mediaType)
