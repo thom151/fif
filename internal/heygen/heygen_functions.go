@@ -24,17 +24,19 @@ func GenerateVideoHeygen(ctx context.Context, script, key, avatarId, voiceID, fi
 		VideoInputs: []VideoInput{
 			{
 				Character: &CharacterSettings{
-					Type:           "talking_photo",
-					TalkingPhotoID: avatarId,
-					Scale:          1.0,
-					AvatarStyle:    "normal",
+					Type:             "talking_photo",
+					TalkingPhotoID:   avatarId,
+					Scale:            1.0,
+					AvatarStyle:      "normal",
+					TalkingStyle:     "stable",
+					UseAvatarIVModel: true,
 				},
 				Voice: VoiceSettings{
 					Type:      "text",
 					VoiceID:   voiceID,
 					InputText: script,
-					Emotion:   "Excited",
-					Speed:     1.0,
+					//Emotion:   "Excited",
+					Speed: 1.0,
 				},
 			},
 		},
@@ -196,19 +198,21 @@ type VideoInput struct {
 }
 
 type CharacterSettings struct {
-	Type           string  `json:"type"`
-	TalkingPhotoID string  `json:"talking_photo_id,omitempty"`
-	AvatarID       string  `json:"avatar_id,omitempty"`
-	Scale          float64 `json:"scale,omitempty"`
-	AvatarStyle    string  `json:"avatar_style,omitempty"`
+	Type             string  `json:"type"`
+	TalkingPhotoID   string  `json:"talking_photo_id,omitempty"`
+	AvatarID         string  `json:"avatar_id,omitempty"`
+	Scale            float64 `json:"scale,omitempty"`
+	AvatarStyle      string  `json:"avatar_style,omitempty"`
+	TalkingStyle     string  `json:"talking_style,omitempty"`
+	UseAvatarIVModel bool    `json:"use_avatar_iv_model,omitempty"`
 }
 
 type VoiceSettings struct {
 	Type       string              `json:"type"`
 	VoiceID    string              `json:"voice_id,omitempty"`
 	InputText  string              `json:"input_text,omitempty"`
-	Emotion    string              `json:"emotion"`
-	Speed      float64             `json"speed"`
+	Emotion    string              `json:"emotion,omitempty"`
+	Speed      float64             `json:"speed"`
 	ElevenLabs *ElevenLabsSettings `json:"elevenlabs_settings"`
 }
 
