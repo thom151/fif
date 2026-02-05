@@ -18,19 +18,34 @@ import (
 
 func GenerateVideoHeygen(ctx context.Context, script, key, avatarId, voiceID, fifTitle string) (videoID string, err error) {
 	url := "https://api.heygen.com/v2/video/generate"
+
+	isPhoto, err := isTalkingPhoto(ctx, key, avatarId)
+	if err != nil {
+		log.Printf("isPhoto error: %v", err)
+		return "", err
+	}
+
+	avatarSetting := CharacterSettings{
+		Scale:       1.0,
+		AvatarStyle: "normal",
+	}
+
+	if isPhoto {
+		fmt.Println("a talking photo")
+		avatarSetting.Type = "talking_photo"
+		avatarSetting.TalkingPhotoID = avatarId
+		avatarSetting.TalkingStyle = "stable"
+		avatarSetting.UseAvatarIVModel = true
+	} else {
+		avatarSetting.Type = "avatar"
+		avatarSetting.AvatarID = avatarId
+	}
 	payload := VideoRequest{
 		Caption: false,
 		Title:   fifTitle,
 		VideoInputs: []VideoInput{
 			{
-				Character: &CharacterSettings{
-					Type:             "talking_photo",
-					TalkingPhotoID:   avatarId,
-					Scale:            1.0,
-					AvatarStyle:      "normal",
-					TalkingStyle:     "stable",
-					UseAvatarIVModel: true,
-				},
+				Character: &avatarSetting,
 				Voice: VoiceSettings{
 					Type:      "text",
 					VoiceID:   voiceID,
