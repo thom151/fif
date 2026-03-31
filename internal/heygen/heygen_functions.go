@@ -56,8 +56,8 @@ func GenerateVideoHeygen(ctx context.Context, script, key, avatarId, voiceID, fi
 			},
 		},
 		Dimension: Dimension{
-			Width:  1280,
-			Height: 720,
+			Width:  1920,
+			Height: 1080,
 		},
 	}
 
