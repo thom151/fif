@@ -20,6 +20,7 @@ import (
 	"github.com/thom151/fif/internal/database"
 	"github.com/thom151/fif/internal/dropbox"
 	"github.com/thom151/fif/internal/fifS3"
+	"github.com/thom151/fif/internal/fifYouTube"
 	"github.com/thom151/fif/internal/formulas"
 	"github.com/thom151/fif/internal/heygen"
 	"github.com/thom151/fif/internal/httpapi"
@@ -187,7 +188,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		log.Fatal("failed to rename processed file:", err)
 	}
 
-	dropboxFolder := filepath.Join(user.Email, time.Now().Format("02-01-2006"), fifVideoParams.ClientAddress)
+	//dropboxFolder := filepath.Join(user.Email, time.Now().Format("02-01-2006"), fifVideoParams.ClientAddress)
 
 	if time.Now().After(cfg.dropboxAccTokenExpiresAt) {
 		newAccTok, err := dropbox.GetNewAccessToken(cfg.dropboxRefreshToken, cfg.dropboxClientID, cfg.dropboxClientSecret)
@@ -197,14 +198,22 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		}
 		cfg.dropboxAccToken = newAccTok.AccessToken
 	}
+	/*
+		link, err := dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxAccToken)
+		if err != nil {
+			httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to dropbox", err)
+			return
+		}
 
-	link, err := dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxAccToken)
+	*/
+
+	youtubeLink, err := fifYouTube.UploadVideo(finalFilePath, fif.Title, fif.Description.String)
 	if err != nil {
-		httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to dropbox", err)
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to youtube", err)
 		return
 	}
 
-	fif.S3Url = sql.NullString{String: link, Valid: true}
+	fif.S3Url = sql.NullString{String: youtubeLink, Valid: true}
 
 	_, err = cfg.db.UpdateFif(opCtx, database.UpdateFifParams{
 		Title:       fif.Title,
