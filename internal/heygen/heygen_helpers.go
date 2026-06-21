@@ -9,7 +9,7 @@ import (
 )
 
 func GenerateAndDownloadAvatar(ctx context.Context, key, script, avatarID, voiceID, fifTitle, avatarOutPath string) (file string, err error) {
-	videoID, err := GenerateVideoHeygen(ctx, script, key, avatarID, voiceID, fifTitle)
+	videoID, err := GenerateVideoHeygenV3(ctx, script, key, avatarID, voiceID, fifTitle)
 	if err != nil {
 		return "", err
 	}

@@ -18,7 +18,6 @@ import (
 
 func GenerateVideoHeygen(ctx context.Context, script, key, avatarId, voiceID, fifTitle string) (videoID string, err error) {
 	url := "https://api.heygen.com/v2/video/generate"
-
 	isPhoto, err := isTalkingPhoto(ctx, key, avatarId)
 	if err != nil {
 		log.Printf("isPhoto error: %v", err)
@@ -197,6 +196,31 @@ func GetVideoStatus(ctx context.Context, key, videoID string) (avatarUrl string,
 
 		log.Println("Status: ", statusResp.Data.Status)
 	}
+}
+
+type HeygenV3Request struct {
+	Type          string `json:"type"`
+	AvatarID      string `json:"avatar_id"`
+	Title         string `json:"title,omitempty"`
+	AspectRatio   string `json:"aspect_ratio,omitempty"`
+	Resolution    string `json:"resolution,omitempty"`
+	Script        string `json:"script"`
+	VoiceID       string `json:"voice_id"`
+	OutputFormat  string `json:"output_format,omitempty"`
+	VoiceSettings struct {
+		Speed float64 `json:"speed,omitempty"`
+	} `json:"voice_settings,omitempty"`
+}
+
+type HeygenV3Response struct {
+	Data struct {
+		VideoID string `json:"video_id"`
+		Status  string `json:"status"`
+	} `json:"data"`
+	Error *struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	} `json:"error,omitempty"`
 }
 
 type VideoRequest struct {

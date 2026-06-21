@@ -200,14 +200,12 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		}
 		cfg.dropboxAccToken = newAccTok.AccessToken
 	}
-	
-		_, err = dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxAccToken)
-		if err != nil {
-			httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to dropbox", err)
-			return
-		}
 
-
+	_, err = dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxAccToken)
+	if err != nil {
+		httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to dropbox", err)
+		return
+	}
 
 	youtubeLink, err := fifYouTube.UploadVideo(finalFilePath, fif.Title, fif.Description.String)
 	if err != nil {
