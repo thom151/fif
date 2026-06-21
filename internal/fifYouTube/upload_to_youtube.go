@@ -30,7 +30,7 @@ func UploadVideo(filename, title, description string) (string, error) {
 			CategoryId:  "22",
 		},
 		Status: &yt.VideoStatus{
-			PrivacyStatus: "unlisted",
+			PrivacyStatus: "public",
 		},
 	}
 

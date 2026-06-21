@@ -102,6 +102,8 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	fmt.Printf("fif script: %s\n", fifScript.FullScript)
+
 	//I use taskID to separate the tasks for each person and no duplicate files in temp
 	taskID := uuid.New().String()
 	base := filepath.Join(cfg.tempDir, user.ID, taskID)
@@ -188,7 +190,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		log.Fatal("failed to rename processed file:", err)
 	}
 
-	//dropboxFolder := filepath.Join(user.Email, time.Now().Format("02-01-2006"), fifVideoParams.ClientAddress)
+	dropboxFolder := filepath.Join(user.Email, time.Now().Format("02-01-2006"), fifVideoParams.ClientAddress)
 
 	if time.Now().After(cfg.dropboxAccTokenExpiresAt) {
 		newAccTok, err := dropbox.GetNewAccessToken(cfg.dropboxRefreshToken, cfg.dropboxClientID, cfg.dropboxClientSecret)
@@ -198,14 +200,14 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 		}
 		cfg.dropboxAccToken = newAccTok.AccessToken
 	}
-	/*
-		link, err := dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxAccToken)
+	
+		_, err = dropbox.UploadToDropbox(finalFilePath, dropboxFolder, cfg.dropboxAccToken)
 		if err != nil {
 			httpapi.RespondWithError(w, http.StatusInternalServerError, "error uploading to dropbox", err)
 			return
 		}
 
-	*/
+
 
 	youtubeLink, err := fifYouTube.UploadVideo(finalFilePath, fif.Title, fif.Description.String)
 	if err != nil {

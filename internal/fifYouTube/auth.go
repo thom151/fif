@@ -10,7 +10,8 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-
+   "bufio"
+    "strings"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -33,9 +34,13 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	fmt.Printf("Open this URL in browser:\n%v\n", authURL)
 	fmt.Print("Enter code: ")
 
-	var code string
-	fmt.Scan(&code)
+ reader := bufio.NewReader(os.Stdin)
+    code, err := reader.ReadString('\n')
+    if err != nil {
+        log.Fatalf("Unable to read authorization code: %v", err)
+    }
 
+    code = strings.TrimSpace(code)
 	tok, err := config.Exchange(context.Background(), code)
 	if err != nil {
 		log.Fatalf("Unable to retrieve token from web %v", err)
