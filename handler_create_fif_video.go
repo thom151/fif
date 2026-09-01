@@ -96,7 +96,7 @@ func (cfg *apiConfig) handlerCreateFifVideo(w http.ResponseWriter, r *http.Reque
 
 	fifDetails := fmt.Sprintf("Agent Name: %s, Client Name: %s, Client Address: %s", fifVideoParams.AgentName, fifVideoParams.ClientName, fifVideoParams.ClientAddress)
 
-	fifScript, err := openai.GenerateFifScript(r.Context(), cfg.openaiClient, fifDetails, cfg.openaiAssistantID)
+	fifScript, err := openai.GenerateFifScriptV2(r.Context(), cfg.openaiClient, fifDetails)
 	if err != nil {
 		httpapi.RespondWithError(w, http.StatusInternalServerError, "coulnd't generate fif script", err)
 		return

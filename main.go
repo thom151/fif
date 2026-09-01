@@ -13,12 +13,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/joho/godotenv"
-	"github.com/sashabaranov/go-openai"
+	//	"github.com/sashabaranov/go-openai"
 	"github.com/thom151/fif/internal/database"
 	"github.com/thom151/fif/internal/dropbox"
 	"github.com/thom151/fif/internal/httpapi"
 
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
+
+	openai "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 )
 
 type apiConfig struct {
@@ -35,7 +38,7 @@ type apiConfig struct {
 	dropboxClientSecret      string
 	heygenApiKey             string
 	deepgramApiKey           string
-	openaiClient             *openai.Client
+	openaiClient             openai.Client
 	openaiAssistantID        string
 	tempDir                  string
 }
@@ -149,7 +152,7 @@ func main() {
 		dropboxClientSecret:      dropboxClientSecret,
 		heygenApiKey:             heygenApiKey,
 		deepgramApiKey:           deepgramApiKey,
-		openaiClient:             openai.NewClient(openaiApiKey),
+		openaiClient:             openai.NewClient(option.WithAPIKey(openaiApiKey)),
 		openaiAssistantID:        assistantID,
 		tempDir:                  tempBase,
 	}

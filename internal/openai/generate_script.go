@@ -2,8 +2,8 @@ package openai
 
 import (
 	"context"
-	"log"
 	"github.com/sashabaranov/go-openai"
+	"log"
 )
 
 func GenerateFifScript(ctx context.Context, c *openai.Client, fifDetails, assistantID string) (resp openaiSmartResponse, err error) {
